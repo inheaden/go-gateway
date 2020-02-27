@@ -32,9 +32,28 @@ func main() {
 	})
 
 	// run eureka client async
-	eureka.DefaultClient.Config(config).
+	client := eureka.DefaultClient.Config(config)
+	client.
 		Register("APP_ID_CLIENT_FROM_CONFIG", 8081).
 		Run()
+
+	api, err := client.Api()
+	if err != nil {
+		log.Fatalln("Failed to pick EurekaServerApi instance, err=", err.Error())
+	}
+	instances, err := api.QueryAllInstances()
+	if err != nil {
+		log.Fatalln("Failed to query all instances, err=", err.Error())
+	}
+
+	for i := range instances {
+		instance := instances[i]
+		log.Println(instance.Name)
+		for i2 := range instance.Instances {
+			actualInst := instance.Instances[i2]
+			log.Println(actualInst.HealthCheckUrl)
+		}
+	}
 
 	http.HandleFunc("/", handler)
 	fmt.Println("Listening on port 8081")
